@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>Shared Things</title>
+		<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+		<script src="http://code.jquery.com/ui/1.10.1/jquery-ui.js"></script>
+		<style>
+			.draggable { position: fixed; } 
+		</style>
+		<script>
+
+		function getPosition(element) {
+    var xPosition = 0;
+    var yPosition = 0;    
+        xPosition += (element.offsetLeft - element.scrollLeft + element.clientLeft);
+        yPosition += (element.offsetTop - element.scrollTop + element.clientTop);
+        element = element.offsetParent;
+    return { x: xPosition, y: yPosition };
+}
+			function logDrag(event, ui){
+				//console.log(array("x1" => JSON.stringify(ui.position));
+					var world = {};
+					var index;
+		
+					for(var i =1;i<=10;i++)
+	                  { if(i<=5)
+	                  	index = "x" + i;
+	                  	else 
+	                  		index = "o" + (i-5);
+	                  	//console.log(index + "  " + getPosition(document.getElementById(index)));
+	                  world[index] = getPosition(document.getElementById(index));
+	              }
+	              world["tttboard"] = getPosition(document.getElementById("tttboard"));
+	           
+console.log(JSON.stringify(world) + '\n');
+			}
+			
+			$(function() { 
+				$("#world img").draggable(); 
+				$("#world img").on("dragstart", function(event, ui) { logDrag(event, ui); });
+				$("#world img").on("dragstop" , function(event, ui) { logDrag(event, ui); });
+				$("#world img").on("drag"     , function(event, ui) { logDrag(event, ui); });
+			});
+		</script>
+	</head>
+	<body>
+		<div id="world">
+			<img id="x1" src="images/x.gif" style="z-index:2;" class="draggable" />
+			<img id="x2" src="images/x.gif" style="z-index:2;" class="draggable" />
+			<img id="x3" src="images/x.gif" style="z-index:2;" class="draggable" />
+			<img id="x4" src="images/x.gif" style="z-index:2;" class="draggable" />
+			<img id="x5" src="images/x.gif" style="z-index:2;" class="draggable" />
+			<img id="o1" src="images/o.gif" style="z-index:2;" class="draggable" />
+			<img id="o2" src="images/o.gif" style="z-index:2;" class="draggable" />
+			<img id="o3" src="images/o.gif" style="z-index:2;" class="draggable" />
+			<img id="o4" src="images/o.gif" style="z-index:2;" class="draggable" />
+			<img id="o5" src="images/o.gif" style="z-index:2;" /class="draggable" >
+			<img id="tttboard" src="images/tictactoe.gif" style="z-index:1;" class="draggable" />
+		</div>
+	</body>
+</html>

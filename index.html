@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+            <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <title>Shared Things</title>
+        <!-- JQuery etc... -->
+            <!-- <link href="jquery-ui-1.10.4.custom/css/smoothness/jquery-ui-1.10.4.custom.css" rel="stylesheet"> ignore jquery ui styles in favour of bootstrap --> 
+        <script src="bootstrap/js/jquery.min.js"></script> 
+
+            <script src="jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.js"></script> <!-- enough jquery ui for dragging  -->
+        <script src="jquery.ui.touch-punch/jquery.ui.touch-punch.min.js"></script> <!-- http://touchpunch.furf.com/ so jquery dragging is touch enabled -->
+
+        <!-- Bootstrap -->
+        <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
+        <!-- Include all compiled plugins (below), or include individual files as needed -->
+
+        <style>
+            .draggable { position: fixed; } 
+        </style>
+<script src="config.js"></script>
+<script src="shake.js"></script>
+
+<script type="text/javascript">
+        var clientId =-1
+        var worldId;
+        var world = {};
+        var oriWorld = {};
+        var positionClient={};
+        var positionsOfWorldViewers = [];
+        var worldNames = [];
+
+        function displayError(error) {
+          var errors = { 1: 'Permission denied', 2: 'Position unavailable', 3: 'Request timeout' };
+          document.getElementById("geolocation").innerHTML="Error: " + errors[error.code];
+        }
+        function displayPosition(position) {
+          //document.getElementById("geolocation").innerHTML="Latitude: " + position.coords.latitude + ", Longitude: " + position.coords.longitude;
+          positionClient['latitude'] = position.coords.latitude;
+          positionClient['longitude'] = position.coords.longitude;
+        
+        }
+        var timeoutVal = 10 * 1000 * 1000;
+        navigator.geolocation.getCurrentPosition(
+          displayPosition, 
+          displayError,
+          { enableHighAccuracy: true, timeout: timeoutVal, maximumAge: 0 }
+        );
+
+        function logDrag(dragType, ui) {
+            var newWorld = {};
+            var index;
+
+            for (var i = 1; i <= 10; i++) {
+                if (i <= 5)
+                    index = "x" + i;
+                else
+                    index = "o" + (i - 5);
+                //console.log(index + "  " + getPosition(document.getElementById(index)));
+                newWorld[index] = getPosition(document.getElementById(index));
+            }
+            newWorld["tttboard"] = getPosition(document.getElementById("tttboard"));
+            world = newWorld;
+            var dataToSend = {"world" : world, "id" : clientId, "worldId" : worldId, "changeWorld" : "Y"};
+            socket.send(JSON.stringify(dataToSend));
+        }
+
+        function getPosition(events) {
+            var xPos = 0;
+            var yPos = 0;
+            xPos += (events.offsetLeft - events.scrollLeft + events.clientLeft);
+            yPos += (events.offsetTop - events.scrollTop + events.clientTop);
+            events = events.offsetParent;
+            return {
+                x: xPos,
+                y: yPos
+            };
+        }
+
+        function showHome()
+        {
+             $('#world').hide();
+               $('#welcome').show();
+        }
+
+        function changeWorld(data) {
+            document.getElementById("tttboard").style.left = data["tttboard"].x + "px";
+            document.getElementById("tttboard").style.top = data["tttboard"].y + "px";
+            var id;
+            for (var i = 1; i <= 10; i++) {
+                if (i <= 5)
+                    id = "x" + i;
+                else
+                    id = "o" + (i - 5);
+                document.getElementById(id).style.top = data[id].y + "px";
+                document.getElementById(id).style.left = data[id].x + "px";
+            }
+        }
+
+        function newWorld() {
+
+            var newName = $('#newWorld').val();
+              $('#newWorld').val("");
+             console.log("Created world name: " + newName);
+            var dataToSend = {};
+             world = oriWorld;
+            dataToSend["world"] = JSON.stringify(world);
+            dataToSend["name"] = newName;
+            dataToSend["newWorld"] = "Y";
+            dataToSend["id"] = clientId;
+            dataToSend["position"] = positionClient;
+            changeWorld(world);
+            socket.send(JSON.stringify(dataToSend));
+        }
+
+        function currentWorlds(data) {
+
+            var select = "<select class = 'input-block-level' id='worldSelected'></select>";
+            $('#universeOptions').html(select);
+            console.log("Worlds available: ");
+            for (var i = 0; i < data.length; i++) {
+                $('#worldSelected').append($("<option></option>")
+                    .attr("value", i)
+                    .text(data[i]));
+                console.log(data[i]);
+            }
+
+        }
+
+        function viewMaps()
+        {
+            var positions = "";
+            var before = "http://maps.googleapis.com/maps/api/staticmap?size=680x680&markers=icon:http://chart.apis.google.com/chart?chst=d_map_pin_icon%26chld=cafe%257C996600|";
+            var after = "&sensor=false";
+            positions+=(before+"");
+            
+            for(var i in positionsOfWorldViewers){
+        positions += positionsOfWorldViewers[i]['latitude'] + ',';
+         positions += positionsOfWorldViewers[i]['longitude'];
+         positions+='|';
+        }
+        positions += after;
+        window.open(positions,"Locations");
+    
+    }
+
+        $( document ).ready(function() {
+
+                 var index;
+
+            for (var i = 1; i <= 10; i++) {
+                if (i <= 5)
+                    index = "x" + i;
+                else
+                    index = "o" + (i - 5);
+                
+                oriWorld[index] = getPosition(document.getElementById(index));
+            }
+            oriWorld["tttboard"] = getPosition(document.getElementById("tttboard"));
+
+            window.addEventListener("shake", shakeEventDetector, false);
+
+            function shakeEventDetector(){
+                alert("Reset game");
+                world = oriWorld;
+                changeWorld(world);
+                var dataToSend = {"world" : world, "id" : clientId, "worldId" : worldId, "changeWorld" : "Y"};
+            socket.send(JSON.stringify(dataToSend));
+
+            }
+
+                socket = new WebSocket("ws://cp3101b-1.comp.nus.edu.sg:" + port);
+
+                socket.onopen = function (event) {
+                    console.log("Connected to Server");
+                };
+                //this part connects to the socket 
+
+                socket.onclose = function (event) {
+                   // alert("Server Closed");
+                };
+
+
+                socket.onmessage = function (event) {
+                    var incomingMsg = JSON.parse(event.data);
+                    if (incomingMsg["newClient"] == "Y" && clientId == -1) {
+                        clientId = incomingMsg["id"];
+                        worldNames = incomingMsg["worldInfo"];
+                        currentWorlds(worldNames);
+                        console.log("My client ID: " + clientId);
+                    }
+                    if (incomingMsg["newWorld"] == "Y" ){
+                        worldNames.push(incomingMsg["worldName"]);
+                        currentWorlds(worldNames);
+
+                        if(incomingMsg["id"] == clientId) {
+                        worldId = incomingMsg["worldId"];
+                        console.log("Created World: " + worldId);
+                        positionsOfWorldViewers = [];
+                        positionsOfWorldViewers.push(positionClient);
+                        console.log("All positions = myPosition");
+                        console.log(positionsOfWorldViewers);
+                        $('#welcome').hide();
+                        $('#world').show();
+                     
+                        changeWorld(world);
+                    }
+                }
+
+                    if (incomingMsg["joinWorld"] == "Y" && incomingMsg["worldId"] == worldId){
+                       if(incomingMsg["id"] == clientId) {
+                        world = incomingMsg["world"];
+                      changeWorld(world);
+                      $('#welcome').hide();
+                      $('#world').show();
+                      
+                       console.log("Joined World: " + worldId);
+                  }
+                       positionsOfWorldViewers = incomingMsg["position"];
+                       console.log("All positions");
+                       console.log(positionsOfWorldViewers);                 
+                    }
+
+                    if(incomingMsg["changeWorld"] == "Y" && incomingMsg["worldId"] == worldId){
+                        var newWorld = incomingMsg["world"];
+                        changeWorld(newWorld);
+
+                    }
+
+                }
+                        
+               $('#world').hide();
+               $('#welcome').show();
+
+                $('#createNewWorldButton').on('click', function () {
+
+                    newWorld();
+                });
+
+
+                $('#selectWorldButton').on('click', function () {
+                    if($('#worldSelected').val()!= undefined){
+                        worldId = $('#worldSelected').val();
+                        
+                    var dataToSend = {
+                        "worldId": worldId,
+                        "joinWorld": "Y",
+                        "id": clientId,
+                        "position" : positionClient
+                    }; socket.send(JSON.stringify(dataToSend));
+                }
+                });
+
+
+
+            $("#world img").draggable(); 
+            $("#world img").on("dragstart", function (event, ui) {}); 
+            $("#world img").on("dragstop", function (event, ui) {
+                logDrag(event, ui);
+            }); 
+            $("#world img").on("drag", function (event, ui) {});
+        });
+    </script>
+</head>
+
+  <body style="padding-top:70px; padding-bottom:70px;" >
+<!-- try {.navbar-fixed-top, .navbar-fixed-bottom, .navbar-static-top} X {.navbar-inverse }
+     have to add padding-top:70px, or padding-bottom:70px for fixed navbar
+-->
+<nav class="navbar navbar-default navbar-fixed-top navbar-inverse">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+       <ul class="nav navbar-nav">
+      <li class="active" onclick = "showHome()"><a class="navbar-brand" href = "#">Shared Things</a></li></ul>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav navbar-nav navbar-right">
+       
+      <form class="navbar-form navbar-left">
+        <div class="form-group">
+          <input type="text" class="form-control" id="newWorld" placeholder="Add World Name">
+        </div>
+        <button type="button"  id = "createNewWorldButton" class="btn btn-default">Create World</button>
+      </form>
+      
+        <form class="navbar-form navbar-left">
+       <div id="universeOptions" class="form-control"></div>
+        <button type="button"  id = "selectWorldButton" class="btn btn-default">Join World</button>
+        </form>
+         <li ><a class="navbar-brand" onclick = "viewMaps()" disabled >View World</a></li>
+         <li ><a class="navbar-brand" href = "instructions.html">Instructions</a></li>      
+     </ul>
+      
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav> 
+    <div  id = "world" class="container">
+        <div class="row">
+            <div class="col-xs-12">
+                <div id="world1">
+                    <img id="x1" src="images/x.gif" style="z-index:2;" class="draggable" />
+                    <img id="o1" src="images/o.gif" style="z-index:2;" class="draggable" />
+                    <img id="x2" src="images/x.gif" style="z-index:2;" class="draggable" />
+                    <img id="o2" src="images/o.gif" style="z-index:2;" class="draggable" />
+                    <img id="x3" src="images/x.gif" style="z-index:2;" class="draggable" />
+                    <img id="o3" src="images/o.gif" style="z-index:2;" class="draggable" />
+                    <img id="x4" src="images/x.gif" style="z-index:2;" class="draggable" />
+                    <img id="o4" src="images/o.gif" style="z-index:2;" class="draggable" />
+                    <img id="x5" src="images/x.gif" style="z-index:2;" class="draggable" />
+                    <img id="o5" src="images/o.gif" style="z-index:2;" class="draggable" />
+                    <img id="tttboard" src="images/tictactoe.gif" style="z-index:1;" class="draggable" />
+                </div>
+                <div id="geolocation"></div>
+            </div>
+        </div>
+    </div>
+    <div  id = "welcome" class="container">
+        <div class="row">
+            <div class="col-xs-12">
+                <div id="welcome1">
+                <br>
+                <br>
+
+                <p> <font size = 5> Welcome to </font> <font size = 6> Shared Things.</font> <br><br> <font size = 5>Create a new world or join one the of existing worlds 
+                to continue. You might want to read the instructions first! </font></p>
+
+                </div>
+                </div>
+                </div>
+                </div>
+        <!-- Bootstrap -->
+        <script src="bootstrap/js/bootstrap.min.js"></script>
+  </body>
+</html>
+

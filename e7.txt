@@ -1,0 +1,3 @@
+The client sends data to the server only when the object dragged has come to a final position. This reduces the load on the client and the server by a huge margin. 
+When 2 clients try to move the same object simultaneously, the client to drop the object last will win. 
+The movements are much smoother as the client doesn't send anything when the object is being moved.

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+        <head>
+		<meta charset="utf-8">
+		<script src="bootstrap/js/jquery.min.js"></script>
+		<script src="config.js"></script>
+                <script>
+			var socket;
+
+			function send(){
+				socket.send($('#message').val());
+				$('#message').val("");
+			}
+			
+			$(function(){
+				socket = new WebSocket("ws://cp3101b-1.comp.nus.edu.sg:"+port);
+				socket.onopen = function (event) {
+  					// socket.send("Here's some text that the server is urgently awaiting!"); 
+					$('#sendButton').removeAttr('disabled');
+					console.log("connected");
+				};
+				socket.onclose = function (event) {
+					alert("closed code:" + event.code + " reason:" +event.reason + " wasClean:"+event.wasClean);
+				};
+				socket.onmessage = function (event) {
+					$('#messages').append("<br/>"+event.data);
+					// console.log(event.data);
+				}
+			});
+		</script>
+	</head>
+	<body>
+		<h3>Chat Console</h3>
+		<form> 
+			<input type="text" id="message" /><input type="button" id="sendButton" value="send" disabled='disabled' onclick="send();" />
+		</form>
+		<div id="messages" style="border:1px solid black; width:100%; height:100px; overflow: auto;" ></div>
+	</body>
+</html>

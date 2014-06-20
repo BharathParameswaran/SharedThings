@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Shared Things</title>
+
+
+    <script src="bootstrap/js/jquery.min.js"></script>
+    <script src="jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.js"></script>
+    <script src="jquery.ui.touch-punch/jquery.ui.touch-punch.min.js"></script>
+    <script src="config.js"></script>
+    <style>
+        .draggable {
+            position: fixed;
+        }
+    </style>
+    <script src="config.js"></script>
+
+    <script>
+        var clientId =-1;
+        var worldId;
+        var world = {};
+
+
+        function logDrag(dragType, ui) {
+            var newWorld = {};
+            var index;
+
+            for (var i = 1; i <= 10; i++) {
+                if (i <= 5)
+                    index = "x" + i;
+                else
+                    index = "o" + (i - 5);
+                //console.log(index + "  " + getPosition(document.getElementById(index)));
+                newWorld[index] = getPosition(document.getElementById(index));
+            }
+            newWorld["tttboard"] = getPosition(document.getElementById("tttboard"));
+            world = newWorld;
+            var dataToSend = {"world" : world, "id" : clientId, "worldId" : worldId, "changeWorld" : "Y"};
+            socket.send(JSON.stringify(dataToSend));
+        }
+
+        function getPosition(events) {
+            var xPos = 0;
+            var yPos = 0;
+            xPos += (events.offsetLeft - events.scrollLeft + events.clientLeft);
+            yPos += (events.offsetTop - events.scrollTop + events.clientTop);
+            events = events.offsetParent;
+            return {
+                x: xPos,
+                y: yPos
+            };
+        }
+
+
+        function changeWorld(data) {
+        	console.log(data);
+            document.getElementById("tttboard").style.left = data["tttboard"].x + "px";
+            document.getElementById("tttboard").style.top = data["tttboard"].y + "px";
+            var id;
+            for (var i = 1; i <= 10; i++) {
+                if (i <= 5)
+                    id = "x" + i;
+                else
+                    id = "o" + (i - 5);
+                //console.log(index + "  " + getPosition(document.getElementById(index)));
+                document.getElementById(id).style.top = data[id].y + "px";
+                document.getElementById(id).style.left = data[id].x + "px";
+            }
+        }
+
+        function newWorld() {
+
+            var newName = $('#newWorld').val();
+           
+             console.log(newName);
+            var dataToSend = {};
+
+
+            var index;
+
+            for (var i = 1; i <= 10; i++) {
+                if (i <= 5)
+                    index = "x" + i;
+                else
+                    index = "o" + (i - 5);
+                //console.log(index + "  " + getPosition(document.getElementById(index)));
+                world[index] = getPosition(document.getElementById(index));
+            }
+            world["tttboard"] = getPosition(document.getElementById("tttboard"));
+            dataToSend["world"] = JSON.stringify(world);
+            dataToSend["name"] = newName;
+            dataToSend["newWorld"] = "Y";
+            dataToSend["id"] = clientId;
+            socket.send(JSON.stringify(dataToSend));
+        }
+
+        function currentWorlds(data) {
+
+            var select = "<select id='worldSelected'></select>";
+            $('#universeOptions').html(select);
+            console.log(data);
+            for (var i = 0; i < data.length; i++) {
+                $('#worldSelected').append($("<option></option>")
+                    .attr("value", i)
+                    .text(data[i]));
+                console.log(data[i]);
+            }
+
+        }
+
+
+        $(function () {
+
+                socket = new WebSocket("ws://cp3101b-1.comp.nus.edu.sg:" + port);
+
+                socket.onopen = function (event) {
+                    console.log("connected");
+                };
+                //this part connects to the socket 
+
+                socket.onclose = function (event) {
+                   // alert("Server Closed");
+                };
+
+
+                socket.onmessage = function (event) {
+                    var incomingMsg = JSON.parse(event.data);
+                    if (incomingMsg["newClient"] == "Y" && clientId == -1) {
+                        clientId = incomingMsg["id"];
+                        var worldNames = incomingMsg["worldInfo"];
+                        console.log(worldNames);
+                        currentWorlds(worldNames);
+                        console.log(clientId);
+                    }
+                    if (incomingMsg["newWorld"] == "Y" && incomingMsg["id"] == clientId) {
+                        worldId = incomingMsg["worldId"];
+                        console.log(worldId);
+                        $('#universe').hide();
+                        $('#world').show();
+                        changeWorld(world);
+                    }
+
+                    if (incomingMsg["joinWorld"] == "Y" && incomingMsg["id"] == clientId) {
+                        world = incomingMsg["world"];
+                        $('#universe').hide();
+                        $('#world').show();
+                        changeWorld(world);
+                    }
+
+                    if(incomingMsg["changeWorld"] == "Y" && incomingMsg["worldId"] == worldId){
+                        var newWorld = incomingMsg["world"];
+                        console.log(newWorld);
+
+                        changeWorld(newWorld);
+
+                    }
+
+                }
+
+                $('#world').hide();
+
+                $('#worldSelected').change(function () {
+                    console.log($('#worldSelected').val());
+                });
+
+                $('#createNewWorldButton').on('click', function () {
+                    newWorld();
+
+
+                    $('#worldSelected').change(function () {
+                        console.log($('#worldSelected').val());
+                    });
+
+
+                });
+
+
+                $('#selectWorldButton').on('click', function () {
+                    if($('#worldSelected').val()!= undefined){
+                        worldId = $('#worldSelected').val();
+
+                        console.log(worldId);
+                    var dataToSend = {
+                        "worldId": worldId,
+                        "joinWorld": "Y",
+                        "id": clientId
+                    }; socket.send(JSON.stringify(dataToSend));
+                }
+                });
+
+
+
+            $("#world img").draggable(); 
+            $("#world img").on("dragstart", function (event, ui) {}); 
+            $("#world img").on("dragstop", function (event, ui) {
+                logDrag(event, ui);
+            }); 
+            $("#world img").on("drag", function (event, ui) {});
+        });
+    </script>
+</head>
+
+<body>
+
+
+    <div id="universe">
+        <h2> Tic Tac Toe</h2>
+        <h3> Select the tic-tac-toe game that you want to enter</h3>
+        <h4>You can either choose to play from the present games available or create your own new game. <br></h4>
+        
+            Select from current games:
+            <br>
+
+            <div id="universeOptions"></div>
+            <form>
+            <input type="button" id="selectWorldButton" name="selectWorld" value="Select Game">
+            </form>
+            </br>
+
+       
+       
+            Create a new game:
+            <br>
+             <form>
+            <input type="text" id="newWorld" name = "worldName" required="required">
+            <input type="button" id="createNewWorldButton" name="createNewWorld" value="Create New Game">
+        </form>
+    </div>
+
+    <div id="world">
+
+        <img id="x1" src="images/x.gif" style="z-index:2;" class="draggable" />
+        <img id="o1" src="images/o.gif" style="z-index:2;" class="draggable" />
+        <img id="x2" src="images/x.gif" style="z-index:2;" class="draggable" />
+        <img id="o2" src="images/o.gif" style="z-index:2;" class="draggable" />
+        <img id="x3" src="images/x.gif" style="z-index:2;" class="draggable" />
+        <img id="o3" src="images/o.gif" style="z-index:2;" class="draggable" />
+        <img id="x4" src="images/x.gif" style="z-index:2;" class="draggable" />
+        <img id="o4" src="images/o.gif" style="z-index:2;" class="draggable" />
+        <img id="x5" src="images/x.gif" style="z-index:2;" class="draggable" />
+        <img id="o5" src="images/o.gif" style="z-index:2;" class="draggable" />
+
+        <img id="tttboard" src="images/tictactoe.gif" style="z-index:1;" class="draggable" />
+    </div>
+</body>
+
+</html>

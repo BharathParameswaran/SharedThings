@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+            <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <title>Shared Things | Help</title>
+         <script src="bootstrap/js/jquery.min.js"></script> 
+         <script src="jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.js"></script> <!-- enough jquery ui for dragging  -->
+         <script src="jquery.ui.touch-punch/jquery.ui.touch-punch.min.js"></script> <!-- http://touchpunch.furf.com/ so jquery dragging is touch enabled -->
+        <!-- Bootstrap -->
+        <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
+        </head>
+  
+  <body style="padding-top:70px; padding-bottom:70px;" >
+<!-- try {.navbar-fixed-top, .navbar-fixed-bottom, .navbar-static-top} X {.navbar-inverse }
+     have to add padding-top:70px, or padding-bottom:70px for fixed navbar
+-->
+<nav class="navbar navbar-default navbar-fixed-top navbar-inverse">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <ul class="nav navbar-nav">
+      <li ><a class="navbar-brand" href = "index.html">Shared Things</a></li></ul>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav navbar-nav navbar-right">
+     
+         <li class="active"><a class="navbar-brand" href = "instructions.html">Instructions</a></li>      
+     </ul>
+      
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav>
+    <div  id = "instructions" class="container">
+        <div class="row">
+            <div class="col-xs-12">
+                <div id="world1">
+
+                 <h3>Tic Tac Toe Help</h3><br>This application allows multiple users from all around the Globe to view a common webpage that is dynamically updated each time a user makes a change. <br>All components used in this application (board, X and O) are draggable and any changes made to them will be visible to every viewer of that world.<br>To begin, follow the instructions below:<br>1. Click on the Navigation button at the top right of your screen.<br>2. You can either create a New world or join any of the existing worlds by choosing the world name from the drop down list.<br>3. Click on the navigation icon to dismiss the menu.<br>4. Shake to reset the world to its original coordinates!! <br>Viewing the positions of all users: Navigate to the "Postions" tab to view the positions of all the users(current and past) of the world.<br> <br><br>
+
+                 <form action = "index.html">
+
+               <button type="submit" id = "closeIns" class="btn btn-default">Ready!!</button>
+               </form>
+                   
+                </div>
+            </div>
+        </div>
+    </div>
+  </body>
+</html>
